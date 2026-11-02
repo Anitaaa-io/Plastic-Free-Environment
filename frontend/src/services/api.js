@@ -58,7 +58,7 @@ export const authService = {
     if (response.data.access) {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
-      
+
       let userObj = response.data.user;
       if (!userObj) {
         try {
@@ -68,7 +68,7 @@ export const authService = {
           userObj = { username: credentials.username };
         }
       }
-      
+
       localStorage.setItem('user', JSON.stringify(userObj));
       return { tokens: response.data, user: userObj };
     }

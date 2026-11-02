@@ -42,7 +42,7 @@ const Login = () => {
     } catch (err) {
       console.error('Login error:', err);
       if (!err.response) {
-        setErrorMsg('Cannot reach backend server. Please verify Django backend is running on http://127.0.0.1:8000.');
+        setErrorMsg('Cannot reach backend server. Please verify the API server is online and reachable.');
       } else {
         setErrorMsg(err.response?.data?.detail || 'Invalid username or password. Please verify credentials.');
       }

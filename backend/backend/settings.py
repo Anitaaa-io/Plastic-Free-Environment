@@ -1,12 +1,13 @@
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Ensure backend root is on sys.path so 'api' app is always resolvable
-import sys
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
@@ -15,15 +16,17 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-plastic-free-platform-super-secret-key-2026-csp')
 
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 raw_hosts = os.getenv('ALLOWED_HOSTS', '*')
 if raw_hosts == '*':
     ALLOWED_HOSTS = ['*']
 else:
     ALLOWED_HOSTS = [h.strip() for h in raw_hosts.split(',') if h.strip()]
-if 'testserver' not in ALLOWED_HOSTS and '*' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('testserver')
+
+for default_host in ['localhost', '127.0.0.1', '.onrender.com', '.vercel.app', 'testserver']:
+    if default_host not in ALLOWED_HOSTS and '*' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(default_host)
 
 
 INSTALLED_APPS = [
@@ -42,8 +45,6 @@ INSTALLED_APPS = [
     # Internal apps
     'api.apps.ApiConfig',
 ]
-
-import dj_database_url
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -135,7 +136,15 @@ USE_TZ = True
 # Static and Media files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -167,16 +176,28 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+raw_cors = os.getenv('CORS_ALLOWED_ORIGINS', '')
+if raw_cors:
+    CORS_ALLOWED_ORIGINS = [c.strip() for c in raw_cors.split(',') if c.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "https://plastic-free-environment.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
 ]
+
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1')
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -193,9 +214,9 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.vercel.app",
     "https://*.onrender.com",
     "https://*.railway.app",
+    "https://plastic-free-environment.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
-
